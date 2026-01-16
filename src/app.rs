@@ -1,3 +1,5 @@
+use crate::backend::p2p::P2PBackend;
+use crate::backend::ChatBackend;
 use crate::cli::{Cli, Command};
 
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
@@ -14,6 +16,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
                 "Connecting to host: {} on port: {} as '{}'",
                 host, port, username
             );
+
+            let mut backend = P2PBackend::connect(&host, port, username).await?;
+            backend.join_room("default").await?;
         }
     }
 

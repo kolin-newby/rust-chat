@@ -1,8 +1,9 @@
-mod cli;
 mod app;
+mod backend;
+mod cli;
 
-use clap::Parser;
 use crate::cli::Cli;
+use clap::Parser;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
