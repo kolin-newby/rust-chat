@@ -2,7 +2,7 @@ use anyhow::Context;
 use async_trait::async_trait;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::OwnedWriteHalf;
-use tokio::net::TcpStream;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
 
 use crate::backend::ChatBackend;
@@ -15,6 +15,22 @@ pub struct P2PBackend {
 }
 
 impl P2PBackend {
+    pub async fn listen(port: u16, username: String) -> anyhow::Result<Self> {
+        let addr = format!("0.0.0.0:{}", port);
+        let listener = TcpListener::bind(&addr)
+            .await
+            .with_context(|| format!("Failed to bind TCP Listener to address: {}", addr))?;
+
+        let (stream, peer_addr) = listener
+            .accept()
+            .await
+            .context("failed to accept incoming connection")?;
+
+        println!("Connected with peer at: {}", peer_addr);
+
+        Self::from_stream(stream, username).await
+    }
+
     pub async fn connect(host: &str, port: u16, username: String) -> anyhow::Result<Self> {
         let addr = format!("{}:{}", host, port);
         let stream = TcpStream::connect(&addr)
@@ -50,17 +66,24 @@ impl P2PBackend {
                 }
 
                 // trims off the '\n' and '\r' characters off of the end of the lines
-                let body = line.trim_end_matches(&['\r', '\n'][..]).to_string();
+                let line_str = line.trim_end_matches(&['\r', '\n'][..]).to_string();
                 // if there ius no body no need to do anything, just move on to the next iteration
-                if body.is_empty() {
+                if line_str.is_empty() {
                     continue;
                 }
 
-                // parses the read body into a ChatEvent::Message structure TODO: wire-up the actual 'from' and 'room' values
-                let event = ChatEvent::Message {
-                    from: "peer".to_string(),
-                    room: "default".to_string(),
-                    body,
+                let event = if let Some((from, body)) = line_str.split_once('\t') {
+                    ChatEvent::Message {
+                        from: from.to_string(),
+                        room: "default".to_string(),
+                        body: body.to_string(),
+                    }
+                } else {
+                    ChatEvent::Message {
+                        from: "peer".to_string(),
+                        room: "default".to_string(),
+                        body: line_str.to_string(),
+                    }
                 };
 
                 // sends parsed event and breaks if that errors
@@ -101,8 +124,8 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn send_message(&mut self, _room: &str, body: &str) -> anyhow::Result<()> {
-        self.writer.write_all(body.as_bytes()).await?;
-        self.writer.write_all(b"\n").await?;
+        let msg = format!("{}\t{}\n", self.username, body);
+        self.writer.write_all(msg.as_bytes()).await?;
         self.writer.flush().await?;
         Ok(())
     }
