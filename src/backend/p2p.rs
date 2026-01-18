@@ -6,7 +6,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
 
 use crate::backend::ChatBackend;
-use crate::protocol::ChatEvent;
+use crate::protocol::{ChatEvent, WireEvent, PROTOCOL_VERSION};
 
 pub struct P2PBackend {
     username: String,
@@ -72,18 +72,23 @@ impl P2PBackend {
                     continue;
                 }
 
-                let event = if let Some((from, body)) = line_str.split_once('\t') {
-                    ChatEvent::Message {
-                        from: from.to_string(),
-                        room: "default".to_string(),
-                        body: body.to_string(),
+                // we use chat events here when the JSON can't be parsed or there is a protocol version mismatch.
+                let event = match serde_json::from_str::<WireEvent>(&line_str) {
+                    Ok(wire_event) => {
+                        let incoming_version = wire_event.version();
+                        if incoming_version == PROTOCOL_VERSION {
+                            wire_event.into_chat_event()
+                        } else {
+                            ChatEvent::System(format!(
+                                "chat protocol version mismatch: {} -> {} | {}",
+                                incoming_version, PROTOCOL_VERSION, line_str
+                            ))
+                        }
                     }
-                } else {
-                    ChatEvent::Message {
-                        from: "peer".to_string(),
-                        room: "default".to_string(),
-                        body: line_str.to_string(),
-                    }
+                    Err(e) => ChatEvent::System(format!(
+                        "invalid JSON error: {} | message: {}",
+                        e, line_str
+                    )),
                 };
 
                 // sends parsed event and breaks if that errors
@@ -123,9 +128,16 @@ impl ChatBackend for P2PBackend {
         Ok(())
     }
 
-    async fn send_message(&mut self, _room: &str, body: &str) -> anyhow::Result<()> {
-        let msg = format!("{}\t{}\n", self.username, body);
-        self.writer.write_all(msg.as_bytes()).await?;
+    async fn send_message(&mut self, room: &str, body: &str) -> anyhow::Result<()> {
+        let wire = WireEvent::Chat {
+            v: PROTOCOL_VERSION,
+            from: self.username.clone(),
+            room: room.to_string(),
+            body: body.to_string(),
+        };
+        let json = serde_json::to_string(&wire)?;
+        self.writer.write_all(json.as_bytes()).await?;
+        self.writer.write_all(b"\n").await?;
         self.writer.flush().await?;
         Ok(())
     }
