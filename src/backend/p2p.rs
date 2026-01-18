@@ -1,9 +1,11 @@
 use anyhow::Context;
 use async_trait::async_trait;
+use chrono::Utc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
+use uuid::Uuid;
 
 use crate::backend::ChatBackend;
 use crate::protocol::{ChatEvent, WireEvent, PROTOCOL_VERSION};
@@ -124,13 +126,37 @@ impl ChatBackend for P2PBackend {
         Ok(events)
     }
 
-    async fn join_room(&mut self, _room: &str) -> anyhow::Result<()> {
+    async fn join_room(&mut self, room: &str) -> anyhow::Result<()> {
+        let wire = WireEvent::Join {
+            v: PROTOCOL_VERSION,
+            from: self.username.clone(),
+            room: room.to_string(),
+        };
+        let json = serde_json::to_string(&wire)?;
+        self.writer.write_all(json.as_bytes()).await?;
+        self.writer.write_all(b"\n").await?;
+        self.writer.flush().await?;
+        Ok(())
+    }
+
+    async fn leave_room(&mut self, room: &str) -> anyhow::Result<()> {
+        let wire = WireEvent::Leave {
+            v: PROTOCOL_VERSION,
+            from: self.username.clone(),
+            room: room.to_string(),
+        };
+        let json = serde_json::to_string(&wire)?;
+        self.writer.write_all(json.as_bytes()).await?;
+        self.writer.write_all(b"\n").await?;
+        self.writer.flush().await?;
         Ok(())
     }
 
     async fn send_message(&mut self, room: &str, body: &str) -> anyhow::Result<()> {
         let wire = WireEvent::Chat {
             v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
             from: self.username.clone(),
             room: room.to_string(),
             body: body.to_string(),

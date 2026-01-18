@@ -1,12 +1,16 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-pub const PROTOCOL_VERSION: u8 = 1;
+pub const PROTOCOL_VERSION: u8 = 2;
 
 pub type RoomId = String;
 
 #[derive(Debug, Clone)]
 pub enum ChatEvent {
     Message {
+        id: Uuid,
+        ts: DateTime<Utc>,
         from: String,
         room: RoomId,
         body: String,
@@ -20,6 +24,8 @@ pub enum ChatEvent {
 pub enum WireEvent {
     Chat {
         v: u8,
+        id: Uuid,
+        ts: DateTime<Utc>,
         from: String,
         room: RoomId,
         body: String,
@@ -53,13 +59,24 @@ impl WireEvent {
     pub fn into_chat_event(self) -> ChatEvent {
         match self {
             WireEvent::Chat {
-                from, room, body, ..
-            } => ChatEvent::Message { from, room, body },
+                id,
+                ts,
+                from,
+                room,
+                body,
+                ..
+            } => ChatEvent::Message {
+                id,
+                ts,
+                from,
+                room,
+                body,
+            },
             WireEvent::Join { from, room, .. } => {
-                ChatEvent::System((format!("{} joined {}", from, room)))
+                ChatEvent::System(format!("{} joined {}", from, room))
             }
             WireEvent::Leave { from, room, .. } => {
-                ChatEvent::System((format!("{} left {}", from, room)))
+                ChatEvent::System(format!("{} left {}", from, room))
             }
             WireEvent::System { text, .. } => ChatEvent::System(text),
         }
