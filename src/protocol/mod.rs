@@ -82,4 +82,39 @@ impl WireEnvelope {
             WireContent::System { text } => ChatEvent::System(text),
         }
     }
+
+    pub fn chat(from: &str, room: &str, body: &str) -> Self {
+        Self {
+            v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
+            from: from.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Chat {
+                body: body.to_string(),
+            },
+        }
+    }
+
+    pub fn join(from: &str, room: &str) -> Self {
+        Self {
+            v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
+            from: from.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Join,
+        }
+    }
+
+    pub fn leave(from: &str, room: &str) -> Self {
+        Self {
+            v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
+            from: from.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Leave,
+        }
+    }
 }

@@ -1,14 +1,12 @@
 use anyhow::Context;
 use async_trait::async_trait;
-use chrono::Utc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
-use uuid::Uuid;
 
 use crate::backend::ChatBackend;
-use crate::protocol::{ChatEvent, WireContent, WireEnvelope, PROTOCOL_VERSION};
+use crate::protocol::{ChatEvent, WireEnvelope, PROTOCOL_VERSION};
 
 pub struct P2PBackend {
     username: String,
@@ -127,14 +125,7 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn join_room(&mut self, room: &str) -> anyhow::Result<()> {
-        let wire = WireEnvelope {
-            v: PROTOCOL_VERSION,
-            id: Uuid::new_v4(),
-            ts: Utc::now(),
-            from: self.username.clone(),
-            room: Some(room.to_string()),
-            content: WireContent::Join,
-        };
+        let wire = WireEnvelope::join(&self.username, room);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
         self.writer.write_all(b"\n").await?;
@@ -143,14 +134,7 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn leave_room(&mut self, room: &str) -> anyhow::Result<()> {
-        let wire = WireEnvelope {
-            v: PROTOCOL_VERSION,
-            id: Uuid::new_v4(),
-            ts: Utc::now(),
-            from: self.username.clone(),
-            room: Some(room.to_string()),
-            content: WireContent::Leave,
-        };
+        let wire = WireEnvelope::leave(&self.username, room);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
         self.writer.write_all(b"\n").await?;
@@ -159,16 +143,7 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn send_message(&mut self, room: &str, body: &str) -> anyhow::Result<()> {
-        let wire = WireEnvelope {
-            v: PROTOCOL_VERSION,
-            id: Uuid::new_v4(),
-            ts: Utc::now(),
-            from: self.username.clone(),
-            room: Some(room.to_string()),
-            content: WireContent::Chat {
-                body: body.to_string(),
-            },
-        };
+        let wire = WireEnvelope::chat(&self.username, room, body);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
         self.writer.write_all(b"\n").await?;

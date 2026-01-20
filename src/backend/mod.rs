@@ -1,3 +1,4 @@
+pub mod matrix;
 pub mod p2p;
 
 use crate::protocol::ChatEvent;
