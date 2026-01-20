@@ -8,7 +8,7 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 use crate::backend::ChatBackend;
-use crate::protocol::{ChatEvent, WireEvent, PROTOCOL_VERSION};
+use crate::protocol::{ChatEvent, WireContent, WireEnvelope, PROTOCOL_VERSION};
 
 pub struct P2PBackend {
     username: String,
@@ -75,11 +75,11 @@ impl P2PBackend {
                 }
 
                 // we use chat events here when the JSON can't be parsed or there is a protocol version mismatch.
-                let event = match serde_json::from_str::<WireEvent>(&line_str) {
-                    Ok(wire_event) => {
-                        let incoming_version = wire_event.version();
+                let event = match serde_json::from_str::<WireEnvelope>(&line_str) {
+                    Ok(env) => {
+                        let incoming_version = env.version();
                         if incoming_version == PROTOCOL_VERSION {
-                            wire_event.into_chat_event()
+                            env.into_chat_event()
                         } else {
                             ChatEvent::System(format!(
                                 "chat protocol version mismatch: {} -> {} | {}",
@@ -127,10 +127,13 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn join_room(&mut self, room: &str) -> anyhow::Result<()> {
-        let wire = WireEvent::Join {
+        let wire = WireEnvelope {
             v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
             from: self.username.clone(),
-            room: room.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Join,
         };
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
@@ -140,10 +143,13 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn leave_room(&mut self, room: &str) -> anyhow::Result<()> {
-        let wire = WireEvent::Leave {
+        let wire = WireEnvelope {
             v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
             from: self.username.clone(),
-            room: room.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Leave,
         };
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
@@ -153,13 +159,15 @@ impl ChatBackend for P2PBackend {
     }
 
     async fn send_message(&mut self, room: &str, body: &str) -> anyhow::Result<()> {
-        let wire = WireEvent::Chat {
+        let wire = WireEnvelope {
             v: PROTOCOL_VERSION,
             id: Uuid::new_v4(),
             ts: Utc::now(),
             from: self.username.clone(),
-            room: room.to_string(),
-            body: body.to_string(),
+            room: Some(room.to_string()),
+            content: WireContent::Chat {
+                body: body.to_string(),
+            },
         };
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;

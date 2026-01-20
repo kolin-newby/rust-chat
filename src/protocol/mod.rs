@@ -19,66 +19,67 @@ pub enum ChatEvent {
     System(String),
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum WireEvent {
-    Chat {
-        v: u8,
-        id: Uuid,
-        ts: DateTime<Utc>,
-        from: String,
-        room: RoomId,
-        body: String,
-    },
-    Join {
-        v: u8,
-        from: String,
-        room: RoomId,
-    },
-    Leave {
-        v: u8,
-        from: String,
-        room: RoomId,
-    },
-    System {
-        v: u8,
-        text: String,
-    },
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WireEnvelope {
+    pub v: u8,
+    pub id: Uuid,
+    pub ts: DateTime<Utc>,
+    pub from: String,
+    pub room: Option<RoomId>,
+    #[serde(flatten)]
+    pub content: WireContent,
 }
 
-impl WireEvent {
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum WireContent {
+    Chat { body: String },
+    Join,
+    Leave,
+    System { text: String },
+}
+
+impl WireEnvelope {
     pub fn version(&self) -> u8 {
-        match self {
-            WireEvent::Chat { v, .. }
-            | WireEvent::Join { v, .. }
-            | WireEvent::Leave { v, .. }
-            | WireEvent::System { v, .. } => *v,
-        }
+        self.v
     }
 
     pub fn into_chat_event(self) -> ChatEvent {
-        match self {
-            WireEvent::Chat {
-                id,
-                ts,
-                from,
-                room,
-                body,
-                ..
-            } => ChatEvent::Message {
-                id,
-                ts,
-                from,
-                room,
-                body,
-            },
-            WireEvent::Join { from, room, .. } => {
+        let WireEnvelope {
+            id,
+            ts,
+            from,
+            room,
+            content,
+            ..
+        } = self;
+
+        match content {
+            WireContent::Chat { body } => {
+                let Some(room) = room.as_ref() else {
+                    return ChatEvent::System("missing <room> for Chat".to_string());
+                };
+                ChatEvent::Message {
+                    id,
+                    ts,
+                    from,
+                    room: room.to_string(),
+                    body,
+                }
+            }
+            WireContent::Join => {
+                let Some(room) = room.as_ref() else {
+                    return ChatEvent::System("missing <room> for Join".to_string());
+                };
                 ChatEvent::System(format!("{} joined {}", from, room))
             }
-            WireEvent::Leave { from, room, .. } => {
+            WireContent::Leave => {
+                let Some(room) = room.as_ref() else {
+                    return ChatEvent::System("missing <room> for Leave".to_string());
+                };
                 ChatEvent::System(format!("{} left {}", from, room))
             }
-            WireEvent::System { text, .. } => ChatEvent::System(text),
+            WireContent::System { text } => ChatEvent::System(text),
         }
     }
 }
