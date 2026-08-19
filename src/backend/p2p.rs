@@ -6,7 +6,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
 
 use crate::backend::ChatBackend;
-use crate::protocol::{ChatEvent, WireEnvelope, PROTOCOL_VERSION};
+use crate::protocol::{ChatEvent, RoomId, WireEnvelope, PROTOCOL_VERSION};
 
 pub struct P2PBackend {
     username: String,
@@ -129,7 +129,7 @@ impl ChatBackend for P2PBackend {
         Ok(events)
     }
 
-    async fn join_room(&mut self, room: &str) -> anyhow::Result<()> {
+    async fn join_room(&mut self, room: &RoomId) -> anyhow::Result<()> {
         let wire = WireEnvelope::join(&self.username, room);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
@@ -138,7 +138,7 @@ impl ChatBackend for P2PBackend {
         Ok(())
     }
 
-    async fn leave_room(&mut self, room: &str) -> anyhow::Result<()> {
+    async fn leave_room(&mut self, room: &RoomId) -> anyhow::Result<()> {
         let wire = WireEnvelope::leave(&self.username, room);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;
@@ -147,7 +147,7 @@ impl ChatBackend for P2PBackend {
         Ok(())
     }
 
-    async fn send_message(&mut self, room: &str, body: &str) -> anyhow::Result<()> {
+    async fn send_message(&mut self, room: &RoomId, body: &str) -> anyhow::Result<()> {
         let wire = WireEnvelope::chat(&self.username, room, body);
         let json = serde_json::to_string(&wire)?;
         self.writer.write_all(json.as_bytes()).await?;

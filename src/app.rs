@@ -1,7 +1,7 @@
 use crate::backend::p2p::P2PBackend;
 use crate::backend::ChatBackend;
 use crate::cli::{Cli, Command};
-use crate::protocol::ChatEvent;
+use crate::protocol::{ChatEvent, RoomId};
 
 use chrono::Local;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
@@ -68,7 +68,7 @@ async fn run_interactive(mut backend: P2PBackend) -> anyhow::Result<()> {
         }
     });
 
-    let mut current_room = "default".to_string();
+    let mut current_room = RoomId::default();
 
     loop {
         // this while loop empties the 'input_rx' channel
@@ -82,39 +82,39 @@ async fn run_interactive(mut backend: P2PBackend) -> anyhow::Result<()> {
             }
 
             if let Some(rest) = msg.strip_prefix("/join ") {
-                let room = rest.trim();
+                let trimmed = rest.trim();
 
-                if room.is_empty() {
+                if trimmed.is_empty() {
                     println!("[system]: usage: /join <room>");
                     continue;
                 }
+
+                let room = RoomId::new(trimmed);
 
                 if room == current_room {
                     println!("[system]: already in {}", current_room);
                     continue;
                 }
 
-                if current_room != "default" {
-                    let leaving = current_room.clone();
-                    backend.leave_room(&leaving).await?;
+                if current_room != RoomId::default() {
+                    backend.leave_room(&current_room).await?;
                 }
 
-                current_room = room.to_string();
+                current_room = room;
                 backend.join_room(&current_room).await?;
                 println!("[system]: joined {}", current_room);
                 continue;
             }
 
             if msg == "/leave" {
-                if current_room == "default" {
+                if current_room == RoomId::default() {
                     println!("[system]: already in default room");
                     continue;
                 }
-                let leaving = current_room.clone();
-                backend.leave_room(&leaving).await?;
-                current_room = "default".to_string();
+                backend.leave_room(&current_room).await?;
+                println!("[system]: left {}, back to default", current_room);
+                current_room = RoomId::default();
                 backend.join_room(&current_room).await?;
-                println!("[system]: left {}, back to default", leaving);
                 continue;
             }
 

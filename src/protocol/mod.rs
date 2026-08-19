@@ -1,10 +1,36 @@
+use std::fmt;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub const PROTOCOL_VERSION: u8 = 2;
 
-pub type RoomId = String;
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct RoomId(String);
+
+impl RoomId {
+    pub fn new(id: impl Into<String>) -> Self {
+        Self(id.into())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Default for RoomId {
+    fn default() -> Self {
+        Self("default".to_string())
+    }
+}
+
+impl fmt::Display for RoomId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ChatEvent {
@@ -63,7 +89,7 @@ impl WireEnvelope {
                     id,
                     ts,
                     from,
-                    room: room.to_string(),
+                    room: room.clone(),
                     body,
                 }
             }
@@ -83,37 +109,37 @@ impl WireEnvelope {
         }
     }
 
-    pub fn chat(from: &str, room: &str, body: &str) -> Self {
+    pub fn chat(from: &str, room: &RoomId, body: &str) -> Self {
         Self {
             v: PROTOCOL_VERSION,
             id: Uuid::new_v4(),
             ts: Utc::now(),
             from: from.to_string(),
-            room: Some(room.to_string()),
+            room: Some(room.clone()),
             content: WireContent::Chat {
                 body: body.to_string(),
             },
         }
     }
 
-    pub fn join(from: &str, room: &str) -> Self {
+    pub fn join(from: &str, room: &RoomId) -> Self {
         Self {
             v: PROTOCOL_VERSION,
             id: Uuid::new_v4(),
             ts: Utc::now(),
             from: from.to_string(),
-            room: Some(room.to_string()),
+            room: Some(room.clone()),
             content: WireContent::Join,
         }
     }
 
-    pub fn leave(from: &str, room: &str) -> Self {
+    pub fn leave(from: &str, room: &RoomId) -> Self {
         Self {
             v: PROTOCOL_VERSION,
             id: Uuid::new_v4(),
             ts: Utc::now(),
             from: from.to_string(),
-            room: Some(room.to_string()),
+            room: Some(room.clone()),
             content: WireContent::Leave,
         }
     }
