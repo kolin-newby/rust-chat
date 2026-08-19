@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "rust-async": {
+      "source": "huiali/rust-skills",
+      "sourceType": "github",
+      "skillPath": "skills/rust-async/SKILL.md",
+      "computedHash": "ac68888470367197e77754fd2b7ca8070ebbbd75d2308210324ad2dfb4b94a27"
+    },
+    "rust-skills": {
+      "source": "leonardomso/rust-skills",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "9719e9ebd94783d3436ed26156bf9bf2e4c7f63b3220d9d17ff90cba55c92bb8"
+    }
+  }
+}
