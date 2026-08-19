@@ -144,3 +144,147 @@ impl WireEnvelope {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn chat_with_room_produces_message_event() {
+        let envelope = WireEnvelope::chat("alice", &RoomId::new("general"), "hello");
+
+        let event = envelope.clone().into_chat_event();
+
+        match event {
+            ChatEvent::Message {
+                id,
+                from,
+                room,
+                body,
+                ..
+            } => {
+                assert_eq!(id, envelope.id);
+                assert_eq!(from, "alice");
+                assert_eq!(room, RoomId::new("general"));
+                assert_eq!(body, "hello");
+            }
+            other => panic!("expected ChatEvent::Message, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn chat_without_room_produces_system_error() {
+        let mut envelope = WireEnvelope::chat("alice", &RoomId::new("general"), "hello");
+        envelope.room = None;
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "missing <room> for Chat"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn join_with_room_produces_system_notice() {
+        let envelope = WireEnvelope::join("bob", &RoomId::new("general"));
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "bob joined general"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn join_without_room_produces_system_error() {
+        let mut envelope = WireEnvelope::join("bob", &RoomId::new("general"));
+        envelope.room = None;
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "missing <room> for Join"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn leave_with_room_produces_system_notice() {
+        let envelope = WireEnvelope::leave("bob", &RoomId::new("general"));
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "bob left general"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn leave_without_room_produces_system_error() {
+        let mut envelope = WireEnvelope::leave("bob", &RoomId::new("general"));
+        envelope.room = None;
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "missing <room> for Leave"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn system_content_passes_text_through_regardless_of_room() {
+        let envelope = WireEnvelope {
+            v: PROTOCOL_VERSION,
+            id: Uuid::new_v4(),
+            ts: Utc::now(),
+            from: "server".to_string(),
+            room: None,
+            content: WireContent::System {
+                text: "connected".to_string(),
+            },
+        };
+
+        let event = envelope.into_chat_event();
+
+        match event {
+            ChatEvent::System(text) => assert_eq!(text, "connected"),
+            other => panic!("expected ChatEvent::System, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn chat_constructor_sets_protocol_version_and_body() {
+        let envelope = WireEnvelope::chat("alice", &RoomId::new("general"), "hi");
+
+        assert_eq!(envelope.version(), PROTOCOL_VERSION);
+        assert_eq!(envelope.room, Some(RoomId::new("general")));
+        assert!(matches!(envelope.content, WireContent::Chat { ref body } if body == "hi"));
+    }
+
+    #[test]
+    fn room_id_default_is_default_room() {
+        assert_eq!(RoomId::default().as_str(), "default");
+    }
+
+    #[test]
+    fn room_id_displays_as_its_string() {
+        let room = RoomId::new("general");
+        assert_eq!(room.to_string(), "general");
+    }
+
+    #[test]
+    fn wire_envelope_round_trips_through_json() {
+        let original = WireEnvelope::chat("alice", &RoomId::new("general"), "hello");
+
+        let json = serde_json::to_string(&original).unwrap();
+        let decoded: WireEnvelope = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(decoded.id, original.id);
+        assert_eq!(decoded.room, original.room);
+        assert!(matches!(decoded.content, WireContent::Chat { ref body } if body == "hello"));
+    }
+}
