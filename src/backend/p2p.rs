@@ -57,7 +57,12 @@ impl P2PBackend {
                 // reads a full line from the reader and breaks if there is an error
                 let bytes = match reader.read_line(&mut line).await {
                     Ok(n) => n,
-                    Err(_) => break,
+                    Err(e) => {
+                        let _ = events_tx
+                            .send(ChatEvent::System(format!("connection read error: {}", e)))
+                            .await;
+                        break;
+                    }
                 };
 
                 // breaks on EOF, there are not bytes read
@@ -66,14 +71,14 @@ impl P2PBackend {
                 }
 
                 // trims off the '\n' and '\r' characters off of the end of the lines
-                let line_str = line.trim_end_matches(&['\r', '\n'][..]).to_string();
+                let trimmed = line.trim_end_matches(&['\r', '\n'][..]);
                 // if there ius no body no need to do anything, just move on to the next iteration
-                if line_str.is_empty() {
+                if trimmed.is_empty() {
                     continue;
                 }
 
                 // we use chat events here when the JSON can't be parsed or there is a protocol version mismatch.
-                let event = match serde_json::from_str::<WireEnvelope>(&line_str) {
+                let event = match serde_json::from_str::<WireEnvelope>(trimmed) {
                     Ok(env) => {
                         let incoming_version = env.version();
                         if incoming_version == PROTOCOL_VERSION {
@@ -81,13 +86,13 @@ impl P2PBackend {
                         } else {
                             ChatEvent::System(format!(
                                 "chat protocol version mismatch: {} -> {} | {}",
-                                incoming_version, PROTOCOL_VERSION, line_str
+                                incoming_version, PROTOCOL_VERSION, trimmed
                             ))
                         }
                     }
                     Err(e) => ChatEvent::System(format!(
                         "invalid JSON error: {} | message: {}",
-                        e, line_str
+                        e, trimmed
                     )),
                 };
 

@@ -46,7 +46,8 @@ async fn run_interactive(mut backend: P2PBackend) -> anyhow::Result<()> {
 
             let bytes = match stdin.read_line(&mut line).await {
                 Ok(n) => n,
-                Err(_) => {
+                Err(e) => {
+                    eprintln!("stdin read error: {}", e);
                     break;
                 }
             };
