@@ -1,25 +1,5 @@
 # CLAUDE.md
 
-## Commit messages
+@AGENTS.md
 
-Commit messages MUST follow the Conventional Commits format: `type(scope): description`.
-
-- `type` is one of: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-- `scope` is optional but recommended
-- Use imperative mood in the description (e.g. "add", not "added")
-- Add a body/footer for additional context or breaking changes when needed
-
-See the `conventional-commit` skill for the full structure and examples.
-
-## Commit chunking
-
-When asked to commit changes, split them into separate logical commits by default (e.g. bugfixes separate from features, tests separate from the code they cover, unrelated tooling/config separate from source changes) rather than one commit covering everything. Only combine changes into one commit when they're too interdependent to build/compile separately (e.g. a type change and every call site it touches).
-
-## Pre-commit review
-
-Before running any commit, review the actual diff/file contents (not just filenames) of everything about to be staged and warn about:
-
-- Likely secrets or credentials: API keys, tokens, private keys, passwords, connection strings with embedded credentials, `.env` files, cloud provider credential files
-- Unusual or risky file types for this repo: binaries, archives, large data files, IDE/OS cruft, anything that looks auto-generated or out of place
-
-Flag anything found before committing and wait for confirmation on how to proceed - don't silently exclude or silently include it.
+Claude Code doesn't read AGENTS.md natively, so this file imports it above. AGENTS.md is the source of truth for project conventions — edit that file, not this one, unless a change is specific to Claude Code.
