@@ -1,9 +1,12 @@
+use crate::backend::matrix::MatrixBackend;
 use crate::backend::p2p::P2PBackend;
 use crate::backend::ChatBackend;
 use crate::cli::{Cli, Command};
 use crate::protocol::{ChatEvent, RoomId};
 
+use anyhow::Context;
 use chrono::Local;
+use matrix_sdk::ruma::ServerName;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
@@ -15,7 +18,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
 
             let backend = P2PBackend::listen(port, username).await?;
 
-            return run_interactive(backend).await;
+            return run_interactive(Box::new(backend)).await;
         }
         Command::Client {
             host,
@@ -29,12 +32,29 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
 
             let backend = P2PBackend::connect(&host, port, username).await?;
 
-            return run_interactive(backend).await;
+            return run_interactive(Box::new(backend)).await;
+        }
+        Command::Matrix {
+            homeserver,
+            user_id,
+            password,
+        } => {
+            println!(
+                "Connecting to matrix homeserver: {} as '{}'",
+                homeserver, user_id
+            );
+
+            let server_name = <&ServerName>::try_from(homeserver.as_str())
+                .with_context(|| format!("'{}' is not a valid homeserver name", homeserver))?;
+
+            let backend = MatrixBackend::login(server_name, &user_id, &password).await?;
+
+            return run_interactive(Box::new(backend)).await;
         }
     }
 }
 
-async fn run_interactive(mut backend: P2PBackend) -> anyhow::Result<()> {
+async fn run_interactive(mut backend: Box<dyn ChatBackend>) -> anyhow::Result<()> {
     let (input_tx, mut input_rx) = mpsc::channel::<String>(64);
 
     tokio::spawn(async move {

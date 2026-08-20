@@ -35,4 +35,19 @@ pub enum Command {
         #[arg(short, long, default_value = "client")]
         username: String,
     },
+
+    /// Connect to a Matrix homeserver
+    Matrix {
+        /// Matrix homeserver name (e.g. matrix.org)
+        #[arg(short = 'H', long)]
+        homeserver: String,
+
+        /// Matrix user ID or localpart to log in as
+        #[arg(short, long)]
+        user_id: String,
+
+        /// Account password
+        #[arg(short, long)]
+        password: String,
+    },
 }
