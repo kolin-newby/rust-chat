@@ -14,6 +14,12 @@
       "skillPath": "skills/conventional-commit/SKILL.md",
       "computedHash": "f29c9486cede6c7b2df0cfb0a2e4aa67446552b991bcf17d1b309e903171f03d"
     },
+    "good-readme": {
+      "source": "adewale/good-readme",
+      "sourceType": "github",
+      "skillPath": "skills/good-readme/SKILL.md",
+      "computedHash": "0224c333177e3573051ce17304ea7d9ac923b56aa8707ce35a91026457194048"
+    },
     "rust-async": {
       "source": "huiali/rust-skills",
       "sourceType": "github",
