@@ -119,13 +119,7 @@ Full C4 model diagrams (Context, Container, Component) live in [`docs/architectu
 
 ## Project conventions
 
-Commit format, commit chunking, pre-commit review, and diagram-upkeep rules are documented in [`AGENTS.md`](AGENTS.md) — read that before committing changes.
-
-## License
-
-Licensed under the [Apache License 2.0](LICENSE).
-
-## AI involvement
+Commit format, commit chunking, pre-commit review, and documentation-upkeep rules are documented in [`AGENTS.md`](AGENTS.md) — read that before committing changes.
 
 This project is developed with AI coding agent assistance, directed and reviewed by the maintainer rather than generated autonomously.
 
@@ -133,6 +127,10 @@ This project is developed with AI coding agent assistance, directed and reviewed
 
 - **Claude Sonnet 5** (Anthropic) — sole AI contributor to date. Co-authored 19 of this repo's 30 commits: the backend architecture (`ChatBackend` trait, `P2PBackend`, `MatrixBackend`), the protocol module and its test suite, the Matrix CLI wiring, the architecture diagrams, this README, and the local Matrix testing setup.
 
-**Rules & skills in use**
+**Skills in use**
 
-Conventions for any AI agent working here are in [AGENTS.md](AGENTS.md). Skills currently installed (tracked in [skills-lock.json](skills-lock.json)): `rust-skills` and `rust-async` (Rust idioms), `conventional-commit` (commit formatting), `c4-model` (architecture diagrams), `good-readme` (this file).
+Tracked in [skills-lock.json](skills-lock.json): `rust-skills` and `rust-async` (Rust idioms), `conventional-commit` (commit formatting), `c4-model` (architecture diagrams), `good-readme` (this file).
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
