@@ -1,6 +1,13 @@
 {
   "version": 1,
   "skills": {
+    "c4-model": {
+      "source": "cheriftj/c4-model-skill",
+      "sourceType": "github",
+      "skillPath": "skills/c4-model/SKILL.md",
+      "computedHash": "6aef0c40eeeda54b315d49d2fe0d7d7ffec49d46b1c6581c35fbb3a3aec085ea",
+      "patched": "SKILL.md frontmatter had invalid YAML upstream (bare colon inside an unquoted plain scalar). Reflowed the description into a block scalar (>-) with identical text; installed from a locally patched clone since npx skills add can't parse the unpatched source."
+    },
     "conventional-commit": {
       "source": "github/awesome-copilot",
       "sourceType": "github",
