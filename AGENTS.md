@@ -28,6 +28,11 @@ Before running any commit, review the actual diff/file contents (not just filena
 
 Flag anything found before committing and wait for confirmation on how to proceed - don't silently exclude or silently include it.
 
-## Architecture diagram upkeep
+## Documentation upkeep
 
-Architecture diagrams live in `docs/architecture/` (Level 1 Context, Level 2 Container, Level 3 Component - C4 model, Mermaid + Markdown), maintained with the `c4-model` skill. After committing changes, check whether they affect what those diagrams depict - nodes, the wiring between them, implemented-vs-planned status, or per-component test coverage. If they do, use the `c4-model` skill's Update mode to bring the affected level(s) up to date, then stage and commit that update immediately in its own commit. If nothing changed, just note "no diagram changes needed" and move on without asking.
+After committing changes, check whether they affect either of these, and update independently as needed:
+
+- **Architecture diagrams** (`docs/architecture/` - Level 1 Context, Level 2 Container, Level 3 Component, C4 model, Mermaid + Markdown): nodes, the wiring between them, implemented-vs-planned status, or per-component test coverage. Use the `c4-model` skill's Update mode.
+- **README** (`README.md`): features, CLI commands/flags, quick start steps, testing instructions, or anything else it documents. Use the `good-readme` skill's Improve mode.
+
+For whichever needs updating, bring it up to date, then stage and commit that update immediately in its own commit - diagram and README updates get separate commits from each other too, per the commit-chunking rule above. If nothing changed for either, just note "no diagram/README changes needed" and move on without asking.
