@@ -1,0 +1,15 @@
+services:
+  conduit:
+    image: registry.gitlab.com/famedly/conduit/matrix-conduit:latest
+    container_name: rust-chat-test-conduit
+    restart: unless-stopped
+    ports:
+      - "6167:6167"
+    volumes:
+      - conduit-db:/var/lib/matrix-conduit/
+      - ./conduit.toml:/etc/conduit.toml:ro
+    environment:
+      CONDUIT_CONFIG: /etc/conduit.toml
+
+volumes:
+  conduit-db:
