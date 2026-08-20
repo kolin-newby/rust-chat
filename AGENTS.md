@@ -30,4 +30,4 @@ Flag anything found before committing and wait for confirmation on how to procee
 
 ## Architecture diagram upkeep
 
-After committing changes, check whether they affect what `docs/architecture.html` depicts - nodes, the wiring between them, implemented-vs-planned status, or per-component test coverage. If they do, update the diagram to match and republish it to the same URL (https://claude.ai/code/artifact/2c596ed3-fcbf-48cb-9afd-735cab55a239). If they don't, just note "no diagram changes needed" and move on without asking.
+After committing changes, check whether they affect what `docs/architecture.html` depicts - nodes, the wiring between them, implemented-vs-planned status, or per-component test coverage. If they do, update the diagram to match, then stage and commit that update immediately in its own commit. Don't republish the artifact URL as part of this - that's a separate, manual step, not something to do automatically. If nothing changed, just note "no diagram changes needed" and move on without asking.
