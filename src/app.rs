@@ -38,16 +38,20 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             homeserver,
             user_id,
             password,
+            insecure,
         } => {
             println!(
-                "Connecting to matrix homeserver: {} as '{}'",
-                homeserver, user_id
+                "Connecting to matrix homeserver: {} as '{}'{}",
+                homeserver,
+                user_id,
+                if insecure { " (insecure, no TLS)" } else { "" }
             );
 
             let server_name = <&ServerName>::try_from(homeserver.as_str())
                 .with_context(|| format!("'{}' is not a valid homeserver name", homeserver))?;
 
-            let backend = MatrixBackend::login(server_name, &user_id, &password).await?;
+            let backend =
+                MatrixBackend::login(server_name, &user_id, &password, insecure).await?;
 
             return run_interactive(Box::new(backend)).await;
         }

@@ -49,5 +49,10 @@ pub enum Command {
         /// Account password
         #[arg(short, long)]
         password: String,
+
+        /// Connect over plain HTTP instead of HTTPS (for local test
+        /// homeservers, e.g. Synapse or Conduit run without a reverse proxy)
+        #[arg(long)]
+        insecure: bool,
     },
 }

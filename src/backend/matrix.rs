@@ -31,8 +31,19 @@ impl MatrixBackend {
         homeserver: &ServerName,
         user_id: &str,
         password: &str,
+        insecure: bool,
     ) -> anyhow::Result<Self> {
-        let client = Client::builder().server_name(homeserver).build().await?;
+        // Insecure mode connects directly to the given host over HTTP rather
+        // than going through .well-known discovery: a local test homeserver's
+        // own well-known response can still claim an https:// base_url (as
+        // Conduit's does), which would silently pull us back to HTTPS even
+        // though we asked to skip TLS.
+        let builder = if insecure {
+            Client::builder().homeserver_url(format!("http://{homeserver}"))
+        } else {
+            Client::builder().server_name(homeserver)
+        };
+        let client = builder.build().await?;
 
         client
             .matrix_auth()
