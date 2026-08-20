@@ -124,3 +124,15 @@ Commit format, commit chunking, pre-commit review, and diagram-upkeep rules are 
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
+
+## AI involvement
+
+This project is developed with AI coding agent assistance, directed and reviewed by the maintainer rather than generated autonomously.
+
+**Models**
+
+- **Claude Sonnet 5** (Anthropic) — sole AI contributor to date. Co-authored 19 of this repo's 30 commits: the backend architecture (`ChatBackend` trait, `P2PBackend`, `MatrixBackend`), the protocol module and its test suite, the Matrix CLI wiring, the architecture diagrams, this README, and the local Matrix testing setup.
+
+**Rules & skills in use**
+
+Conventions for any AI agent working here are in [AGENTS.md](AGENTS.md). Skills currently installed (tracked in [skills-lock.json](skills-lock.json)): `rust-skills` and `rust-async` (Rust idioms), `conventional-commit` (commit formatting), `c4-model` (architecture diagrams), `good-readme` (this file).
