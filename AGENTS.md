@@ -2,6 +2,10 @@
 
 Project conventions for any AI coding agent working in this repo.
 
+## Engineering decisions
+
+When choosing between options for a design or implementation decision, prefer whichever is the best long-term solution over whichever involves less change or work right now. "This is less code to write" or "this touches less of the existing structure" is not on its own a reason to pick an option — weigh it against which choice holds up better as the project grows.
+
 ## Commit messages
 
 Commit messages MUST follow the Conventional Commits format: `type(scope): description`.
